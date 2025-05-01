@@ -33,13 +33,13 @@ typedef struct {
 } Phase;
 
 // Ordenação dos itens de valor por peso
-void sortByValueWeight(Item itens[], int num_itens) {
-    for (int i = 0; i < num_itens - 1; i++) {
-        for (int j = 0; j < num_itens - i - 1; j++) {
-            if (itens[j].valueByWeight < itens[j + 1].valueByWeight) {
-                Item temp = itens[j]; 
-                itens[j] = itens[j + 1]; 
-                itens[j + 1] = temp;
+void sortByValueWeight(Item items[], int numItems) {
+    for (int i = 0; i < numItems - 1; i++) {
+        for (int j = 0; j < numItems - i - 1; j++) {
+            if (items[j].valueByWeight < items[j + 1].valueByWeight) {
+                Item temp = items[j]; 
+                items[j] = items[j + 1]; 
+                items[j + 1] = temp;
             }
         }
     }
