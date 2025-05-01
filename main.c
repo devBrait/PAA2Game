@@ -138,57 +138,83 @@ void solvePhase(Phase *phase, FILE *out) {
 }
 
 // Leitura e processamento de todas as fases
-void readInput(FILE *in, FILE *out) {
+int readInput(FILE *in, FILE *out) {
     Phase phase;
     char line[256];
 
-    while (fgets(line, sizeof(line), in)) 
-    {
+    phase.quantItems = 0;
+
+    while (fgets(line, sizeof(line), in)) {
         if (strncmp(line, "FASE:", 5) == 0) {
             sscanf(line, "FASE: %[^\n]", phase.name);
             phase.quantItems = 0;
         } 
         else if (strncmp(line, "CAPACIDADE:", 11) == 0) {
-            sscanf(line, "CAPACIDADE: %f", &phase.capacity);
+            if (sscanf(line, "CAPACIDADE: %f", &phase.capacity) != 1) {
+                fprintf(stderr, "Erro ao ler capacidade.\n");
+                return 1;
+            }
         } 
         else if (strncmp(line, "REGRA:", 6) == 0) {
             sscanf(line, "REGRA: %[^\n]", phase.rule);
         } 
         else if (strncmp(line, "ITEM:", 5) == 0) {
+            if (phase.quantItems >= MAX_ITEMS) {
+                fprintf(stderr, "Erro: número máximo de itens excedido.\n");
+                return 1;
+            }
             Item *item = &phase.items[phase.quantItems++];
-            sscanf(line, "ITEM: %[^,], %f, %f, %[^\n]",
-                   item->name, &item->weight, &item->value, item->type);
+            if (sscanf(line, "ITEM: %[^,], %f, %f, %[^\n]",
+                       item->name, &item->weight, &item->value, item->type) != 4) {
+                fprintf(stderr, "Erro ao ler item.\n");
+                return 1;
+            }
         } 
-        else if (line[0] == '\n' || feof(in)) {
+        else if (line[0] == '\n') {
             solvePhase(&phase, out);
         }
     }
 
-    // Processa a última fase
+    // Processa a última fase se houver
     if (phase.quantItems > 0) {
         solvePhase(&phase, out);
     }
+
+    return 0;
 }
+
 
 int main(int argc, char *argv[]) {
 
-    // Verifica se os argumentos foram fornecidos corretamente
-    if (argc < 3) {
-        printf("Entrada incorreta, siga o formato: ./main <ARQUIVO_ENTRADA> <ARQUIVO_SAIDA>\n");
+    // Verifica se foram passados exatamente dois argumentos
+    if (argc != 3) {
+        fprintf(stderr, "Uso incorreto. Formato correto: ./main <ARQUIVO_ENTRADA> <ARQUIVO_SAIDA>\n");
         return 1;
     }
 
-    // Abre os arquivos de entrada e saída
+    // Abre o arquivo de entrada
     FILE *in = fopen(argv[1], "r");
-    FILE *out = fopen(argv[2], "w");
+    if (!in) {
+        fprintf(stderr, "Erro: não foi possível abrir o arquivo de entrada '%s'.\n", argv[1]);
+        return 1;
+    }
 
-    if (!in || !out) {
-        printf("Erro ao abrir arquivos, tente novamente!!! \n");
+    // Abre o arquivo de saída
+    FILE *out = fopen(argv[2], "w");
+    if (!out) {
+        fprintf(stderr, "Erro: não foi possível criar o arquivo de saída '%s'.\n", argv[2]);
+        fclose(in);
         return 1;
     }
 
     // Processa as fases com base no conteúdo do arquivo
-    readInput(in, out);
+    if (readInput(in, out) != 0) {
+        fprintf(stderr, "Erro ao processar os dados.\n");
+        fclose(in);
+        fclose(out);
+        remove(argv[2]);
+        return 1;
+    }
 
     // Fecha os arquivos e exibe mensagem final
     fclose(in);
@@ -197,3 +223,4 @@ int main(int argc, char *argv[]) {
     printf("Dados gravados no arquivo de saída com sucesso.\n");
     return 0;
 }
+
